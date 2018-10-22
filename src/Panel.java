@@ -1,7 +1,11 @@
 import java.applet.Applet;
 import java.applet.AudioClip;
+import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -43,6 +47,7 @@ public class Panel extends JPanel implements KeyListener, Runnable{
 	private AudioClip seErase;
 	private AudioClip seMove;
 	private AudioClip backgroundBGM;
+	private AudioClip gameOverSound;
 
 	// コンストラクタ
 	public Panel(Score score, NextTetrimino showNextTetrimino) {
@@ -63,6 +68,8 @@ public class Panel extends JPanel implements KeyListener, Runnable{
 		seErase = Applet.newAudioClip(getClass().getResource("seErase.wav"));
 		// ブロックを移動させたときの効果音
 		seMove = Applet.newAudioClip(getClass().getResource("seMove.wav"));
+		// ゲームオーバー時に再生するBGM
+		gameOverSound = Applet.newAudioClip(getClass().getResource("GameOver.wav"));
 		// BGMのセット
 		backgroundBGM = Applet.newAudioClip(getClass().getResource("TaurusDemon.wav"));
 		backgroundBGM.loop();
@@ -135,6 +142,8 @@ public class Panel extends JPanel implements KeyListener, Runnable{
 
 			// ゲームオーバー判定
 			if(framework.gameOver()) {
+				//音楽の再生
+				playGameOverSound();
 				// 全て初期化
 				score.setScore(0);
 				framework = new Framework();
@@ -163,6 +172,24 @@ public class Panel extends JPanel implements KeyListener, Runnable{
 		// 描画
 		framework.draw(graphics, tetriminoImage);
 		tetrimino.draw(graphics, tetriminoImage);
+
+		if(framework.gameOver()) {
+			// 画面を黒くぼかす
+			Graphics2D gra2d = (Graphics2D) graphics;
+	        // アルファ値 0.5で半分スケスケ
+	        AlphaComposite composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
+
+	        // 後はセットしてぼかす色と範囲を指定
+	        gra2d.setComposite(composite);
+	        gra2d.setColor(Color.black);
+	        gra2d.fillRect(0, 0, WIDTH, HEIGHT);
+
+	        // YOU DIED文字の表示
+	        Font font = new Font("Serif" , Font.PLAIN , 25);
+			graphics.setColor(Color.red);
+			graphics.setFont(font);
+			graphics.drawString("YOU DIED", WIDTH / 3, HEIGHT / 2);
+		}
 	}
 
 	// 特定のキーが押された時のメソッド
@@ -226,5 +253,17 @@ public class Panel extends JPanel implements KeyListener, Runnable{
 	private void loadImage(String file) {
 		ImageIcon imageIcon = new ImageIcon(getClass().getResource(file));
 		tetriminoImage = imageIcon.getImage();
+	}
+
+	// ゲームオーバー時の処理とか
+	private void playGameOverSound() {
+		backgroundBGM.stop();
+		gameOverSound.play();
+
+		try {
+			Thread.sleep(7000);
+		} catch (InterruptedException ie) {
+			ie.printStackTrace();
+		}
 	}
 }
